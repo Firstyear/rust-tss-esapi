@@ -2,12 +2,99 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /*
- * This example demonstrates how to certify a key that is loaded into the TPM.
+ * Certification (also referred to as attestation) is the process of validating a key adheres
+ * to a promised set of properties. This validation is performed by a cryptographic attestation
+ * to provide strong evidence of the properties. This certification is built through a chain of
+ * trust.
  *
- * Certification involves two major steps. Using the TPM's endorsement key to create
- * an attestation key. Then using the attestation key to certify other objects in
- * the TPM.
+ * In this example, we will show you how to build that trust chain allowing you to certify
+ * objects in a remote TPM.
  *
+ * The root of trust in this process is the TPM's endorsement key (EK). This is a key that is
+ * embedded into the TPM during manufacturing, or by the platform owner post deployment. This
+ * EK allows us to identify that the make and model of the TPM is trustworthy, or that the TPM
+ * has been configured by a provisioning process that we trust.
+ *
+ * The TPM can then enroll an Attestation Key (AIK). This AIK and the EK are both supplied to
+ * an authority that validates properties of the EK. If the EK is considered trustworthy, then
+ * a challenge is encrypted against the pair of AIK and EK.
+ *
+ * If the TPM can decrypt this challenge, this proves that both that AIK *and* that EK are both
+ * present and loaded simultaneously on the same TPM. In isolation, the AIK or the EK themselves
+ * could not decrypt the challenge. This creates the chain between the EK and the AIK such that
+ * our authority can now trust the AIK.
+ *
+ * When the TPM wishes to create or enroll other objects in the future these can have their
+ * public structure certified by the AIK. Since our authority has validated the EK/AIK are from
+ * a trustworthy source, and our AIK is certifying this public structure, this implies that
+ * flags within that public structure are trustworthy and that the related private key is
+ * stored within only that precise TPM.
+ *
+ * An example of this is the public flag `encrypted_duplication`. If this flag was set on
+ * a public object without certification, since we have no trust chain to the TPM the key
+ * resides on then we do not know if this flag will be enforced strictly or not - the TPM
+ * could be a software TPM where the key could be extracted at any time.
+ *
+ * However if our object is certified, then we know that the TPM will correctly enforce
+ * flags such as `encrypted_duplication` giving us strong assurances about how that private
+ * key will be handled.
+ *
+ *
+ * The following diagram demonstrates the process required to create our AIK trust chain and
+ * then to certify a key.
+ *
+ * The Authority in this process does not require a TPM - for brevity we use one in this example
+ * but it is possible to perform this certification without a TPM on the authority.
+ *
+ *
+ *                         ┌────────────────────────────────┐                       ┌───────────────────────┐
+ *                         │ TPM                            │                       │  Authority            │
+ *                         │  ┌──────────────────────────┐  │                       │                       │
+ *                         │  │                          │  │                       │                       │
+ *  Load EK Template────▶  │  │        EK Handle         │──┼─────Send EK Public────┼────▶  Verify EK       │
+ *                         │  │                          │  │                       │           │           │
+ *                         │  └──────────────────────────┘  │                       │           │           │
+ *                         │                                │                       │           │           │
+ *                         │                                │                       │           │           │
+ *                         │  ┌──────────────────────────┐  │                       │           ▼           │
+ *                         │  │                          │  │                       │                       │
+ *      Create AIK───────▶ │  │        AIK Handle        │──┼────Send AIK Public────┼▶  Derive AIK Name     │
+ *                         │  │                          │  │                       │           │           │
+ *                         │  └──────────────────────────┘  │                       │           │           │
+ *                         │                                │                       │           │           │
+ *                         │                                │                       │           │           │
+ *                         │                                │                       │           ▼           │
+ *                         │                                │                       │   Make Credential     │
+ *                         │                                │                       │ Encrypt to EK + AIK   │
+ *                         │                                │                       │           │           │
+ *                         │                                │                       │           │           │
+ *                         │                                │     Send Encrypted    │           │           │
+ *                         │      Activate Credential ◀─────┼────────Challenge──────┼───────────┘           │
+ *                         │                │               │                       │                       │
+ *                         │   ┌──────────────────────────┐ │                       │                       │
+ *                         │   │                          │ │                       │                       │
+ *                         │   │   Decrypted Challenge    │ │                       │                       │
+ *                         │   │                          │ │                       │                       │
+ *                         │   └──────────────────────────┘ │                       │                       │
+ *                         │                 │              │                       │                       │
+ *                         │                 └──────────────┼───────────────────────┼▶  Verify Challenge    │
+ *                         │                                │                       │           │           │
+ *                         │                                │                       │           │           │
+ *                         │                                │                       │           │           │
+ *                         │                                │                       │           ▼           │
+ *                         │                                │                       │ AIK is legitimate!!   │
+ *                         │                                │                       │                       │
+ *                         │                                │                       │                       │
+ *      Load another key  ─┼───▶ Certify Object with AIK    │                       │                       │
+ *                         │                │               │                       │                       │
+ *                         │                │               │                       │                       │
+ *                         │                ▼               │                       │                       │
+ *                         │  ┌──────────────────────────┐  │                       │                       │
+ *                         │  │                          │  │                       │   Verify Attestation  │
+ *                         │  │       Attestation        │──┼───────────────────────┼─▶    is from AIK      │
+ *                         │  │                          │  │                       │                       │
+ *                         │  └──────────────────────────┘  │                       │                       │
+ *                         └────────────────────────────────┘                       └───────────────────────┘
  *
  */
 
@@ -91,7 +178,7 @@ fn main() {
     //    scheme: HashScheme::new(hash_alg),
     // };
 
-    // If you wish to see the EK cert, you can fetch it's DER here.
+    // If you wish to see the EK cert, you can fetch it's X509 DER here.
     let ek_pubcert = retrieve_ek_pubcert(&mut context_1, ek_alg).unwrap();
 
     // Alternately on the CLI you can view the certificate with:
@@ -286,7 +373,16 @@ fn main() {
         })
         .unwrap();
 
+    // Unload the sessions we used.
     context_1.clear_sessions();
+
+    context_1
+        .flush_context(SessionHandle::from(session).into())
+        .expect("Failed to clear session");
+
+    context_1
+        .flush_context(SessionHandle::from(policy_auth_session).into())
+        .expect("Failed to clear policy_auth_session");
 
     // At this point we no longer need the EK loaded. We want to keep the AIK loaded for
     // the certify operation we will perform shortly.
@@ -301,6 +397,7 @@ fn main() {
     assert_eq!(challenge, response);
 
     // ================================================================================
+    // Now begin certifying a new key.
 
     // Create the key we wish to certify.
     let key_handle = create_key(&mut context_1);
@@ -331,15 +428,16 @@ fn main() {
         .tr_sess_set_attributes(session, session_attributes, session_attributes_mask)
         .unwrap();
 
-    // Create a session that is capable of performing endorsements.
+    // Create a session to authenticate to the AIK.
     let (session_attributes, session_attributes_mask) = SessionAttributesBuilder::new().build();
 
-    let policy_auth_session = context_1
+    let aik_auth_session = context_1
         .start_auth_session(
             None,
             None,
             None,
-            SessionType::Policy,
+            // SessionType::Policy,
+            SessionType::Hmac,
             SymmetricDefinition::AES_128_CFB,
             HashingAlgorithm::Sha256,
         )
@@ -348,23 +446,10 @@ fn main() {
 
     context_1
         .tr_sess_set_attributes(
-            policy_auth_session,
+            aik_auth_session,
             session_attributes,
             session_attributes_mask,
         )
-        .unwrap();
-
-    let _ = context_1
-        .execute_with_nullauth_session(|ctx| {
-            ctx.policy_secret(
-                PolicySession::try_from(policy_auth_session).unwrap(),
-                AuthHandle::Endorsement,
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                None,
-            )
-        })
         .unwrap();
 
     let (attest, signature) = context_1
@@ -373,7 +458,7 @@ fn main() {
                 // The first session authenticates the "object to certify".
                 Some(session),
                 // This authenticates the attestation key.
-                Some(policy_auth_session),
+                Some(aik_auth_session),
                 None,
             ),
             |ctx| {
@@ -386,6 +471,15 @@ fn main() {
             },
         )
         .unwrap();
+
+    // Clear the sessions again
+    context_1
+        .flush_context(SessionHandle::from(session).into())
+        .expect("Failed to clear session");
+
+    context_1
+        .flush_context(SessionHandle::from(aik_auth_session).into())
+        .expect("Failed to clear policy_auth_session");
 
     println!("attest: {:?}", attest);
     println!("signature: {:?}", signature);
@@ -415,7 +509,8 @@ fn main() {
 
     let (attest_digest, _ticket) = context_2
         .execute_with_nullauth_session(|ctx| {
-            ctx.hash(attest_data, HashingAlgorithm::Sha256, Hierarchy::Null)
+            // Important to note that this MUST match the ak hash algorithm
+            ctx.hash(attest_data, hash_alg, Hierarchy::Null)
         })
         .expect("Failed to digest attestation output");
 
