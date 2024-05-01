@@ -10,7 +10,7 @@ use tss_esapi::{
     interface_types::{
         algorithm::{HashingAlgorithm, PublicAlgorithm, SymmetricMode},
         key_bits::AesKeyBits,
-        resource_handles::Hierarchy,
+        reserved_handles::Hierarchy,
     },
     structures::{
         CreatePrimaryKeyResult, Digest, InitialValue, MaxBuffer, PublicBuilder,
@@ -73,10 +73,10 @@ fn main() {
 
     // The data we wish to encrypt. Be aware that there is a limit to the size of this data
     // that can be encrypted or decrypted (1024 bytes). In some cases you may need to encrypt a
-    // "content encryption key", which can be decrypted and released and then used to decrypt
+    // content encryption key (CEK), which can be decrypted and released and then used to decrypt
     // the actual data in question outside of the TPM.
     //
-    // TPMs also tend to be "slower" for encryption/decryption, so you may consider the
+    // TPMs also tend to be "slower" for encryption/decryption, so you should consider the
     // CEK pattern for performance reasons.
     let data_to_encrypt = "TPMs are super cool, you should use them!"
         .as_bytes()
@@ -84,15 +84,13 @@ fn main() {
 
     eprintln!("{:?}", data_to_encrypt.len());
 
-    // Input data needs to always be a multiple of AES_BLOCK_SIZE, so we implement PKCS7 padding
-    // to achieve this.
+    // Input data needs to always be a multiple of the AES block size, in this case which is 16
+    // bytes for AES-128-CBC. Normally you *MUST* implement a secure padding scheme such as pkcs7
+    // but in this example we will *manually* pad the data.
 
-    // REVIEW NOTE: Tss-esapi likely should expose these as constants from AesKeyBits::Aes128
-    // to prevent ambiguity!
+    // WARNING: Manually implemented pkcs7 follows. This has not been audited. Don't use this
+    // in production.
     const AES_BLOCK_SIZE: usize = 16;
-
-    // REVIEW NOTE: Should we added PKCS7 padding as a function to MaxBuffer to prevent
-    // people needing to "roll their own"?
 
     let need_k_bytes = AES_BLOCK_SIZE - (data_to_encrypt.len() % AES_BLOCK_SIZE);
     // PKCS7 always pads to remove ambiguous situations.
@@ -109,11 +107,12 @@ fn main() {
 
     let padded_data_to_encrypt = MaxBuffer::try_from(padded_data_to_encrypt).unwrap();
 
-    // Padding always has to be added.
+    // Padding always has to be added in pkcs7 to make it unambiguous.
     assert_ne!(
         data_to_encrypt.as_slice(),
         padded_data_to_encrypt.as_slice()
     );
+    // END WARNING
 
     // AES requires a random initial_value before any encryption or decryption. This must
     // be persisted with the encrypted data, else decryption can not be performed.
@@ -174,6 +173,9 @@ fn main() {
         panic!("Should not be empty");
     }
 
+    // WARNING: Manually implemented pkcs7 follows. This has not been audited. Don't use this
+    // in production.
+
     let last_byte = decrypted_data.len() - 1;
     let k_byte = decrypted_data[last_byte];
     // Since pkcs7 padding repeats this byte k times, we check that this byte
@@ -193,6 +195,8 @@ fn main() {
     let truncate_to = decrypted_data.len().checked_sub(k_byte as usize).unwrap();
     let mut decrypted_data = decrypted_data.to_vec();
     decrypted_data.truncate(truncate_to);
+
+    // END WARNING
 
     println!("data_to_encrypt = {:?}", data_to_encrypt);
     println!("decrypted_data = {:?}", decrypted_data);
