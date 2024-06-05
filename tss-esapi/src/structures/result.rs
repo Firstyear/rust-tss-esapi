@@ -17,6 +17,14 @@ pub struct CreateKeyResult {
 }
 
 #[allow(missing_debug_implementations)]
+pub struct CreateLoadedKeyResult {
+    pub object_handle: ObjectHandle,
+    pub out_private: Private,
+    pub out_public: Public,
+    // pub out_name: Name,
+}
+
+#[allow(missing_debug_implementations)]
 pub struct CreatePrimaryKeyResult {
     pub key_handle: KeyHandle,
     pub out_public: Public,
