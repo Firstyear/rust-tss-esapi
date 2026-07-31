@@ -66,9 +66,10 @@ impl TryFrom<CreateLoadedCommandOutputHandler> for CreateLoadedKeyResult {
     ) -> Result<CreateLoadedKeyResult> {
         let object_handle = ObjectHandle::from(ffi_data_handler.ffi_out_object_handle);
 
-        let out_private_owned =
+        let out_private_owned_result =
             unsafe { take_from_esys(ffi_data_handler.ffi_out_private_ptr) };
-        let out_public_owned =
+
+        let out_public_owned_result =
             unsafe { take_from_esys(ffi_data_handler.ffi_out_public_ptr) };
 
         // let out_name_owned =
@@ -76,8 +77,8 @@ impl TryFrom<CreateLoadedCommandOutputHandler> for CreateLoadedKeyResult {
 
         Ok(CreateLoadedKeyResult {
             object_handle,
-            out_private: Private::try_from(out_private_owned)?,
-            out_public: Public::try_from(out_public_owned)?,
+            out_private: out_private_owned_result.and_then(Private::try_from)?,
+            out_public: out_public_owned_result.and_then(Public::try_from)?,
             // out_name: Name::try_from(out_name_owned)?,
         })
     }
