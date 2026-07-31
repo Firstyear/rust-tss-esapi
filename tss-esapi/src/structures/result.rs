@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    handles::KeyHandle,
+    handles::{KeyHandle, ObjectHandle},
     interface_types::YesNo,
     structures::{CreationData, CreationTicket, Digest, Private, Public},
 };

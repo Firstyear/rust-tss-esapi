@@ -6,6 +6,7 @@ use crate::{
     structures::{CreateLoadedKeyResult, Private, Public},
     tss2_esys::{ESYS_TR, TPM2B_PRIVATE, TPM2B_PUBLIC},
     Error, Result,
+    ffi::take_from_esys,
 };
 use std::convert::TryFrom;
 use std::ptr::null_mut;
@@ -66,9 +67,9 @@ impl TryFrom<CreateLoadedCommandOutputHandler> for CreateLoadedKeyResult {
         let object_handle = ObjectHandle::from(ffi_data_handler.ffi_out_object_handle);
 
         let out_private_owned =
-            crate::ffi::to_owned_with_zeroized_source(ffi_data_handler.ffi_out_private_ptr);
+            unsafe { take_from_esys(ffi_data_handler.ffi_out_private_ptr) };
         let out_public_owned =
-            crate::ffi::to_owned_with_zeroized_source(ffi_data_handler.ffi_out_public_ptr);
+            unsafe { take_from_esys(ffi_data_handler.ffi_out_public_ptr) };
 
         // let out_name_owned =
         //     crate::ffi::to_owned_with_zeroized_source(ffi_data_handler.ffi_out_name_ptr);

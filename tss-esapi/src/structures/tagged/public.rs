@@ -10,7 +10,7 @@ use crate::{
     interface_types::algorithm::{HashingAlgorithm, PublicAlgorithm},
     structures::{Digest, EccPoint, PublicKeyRsa, SymmetricCipherParameters},
     traits::{Marshall, impl_mu_standard},
-    tss2_esys::{TPM2B_PUBLIC, TPMT_PUBLIC},
+    tss2_esys::{TPM2B_PUBLIC, TPMT_PUBLIC, TPM2B_TEMPLATE},
 };
 
 use self::rsa::PublicRsaParameters;
