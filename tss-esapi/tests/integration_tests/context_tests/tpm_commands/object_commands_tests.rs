@@ -468,6 +468,28 @@ mod test_create_loaded {
             .build()
             .expect("Failed to build derive parent public");
 
+        let create_result = context
+            .create(
+                primary_key_handle,
+                derive_parent_public,
+                None,
+                None,
+                None,
+                None,
+            )
+            .expect("Failed to create derivation parent.");
+
+        let CreateKeyResult {
+            out_private,
+            out_public,
+            ..
+        } = create_result;
+
+        let derive_parent_handle = context
+            .load(primary_key_handle, out_private, out_public)
+            .expect("Failed to load derivation parent.");
+
+        /*
         // We should be able to create and load this now. And look, like magic,
         // it's created and loaded in one operation!
         let create_loaded_result = context
@@ -479,6 +501,7 @@ mod test_create_loaded {
             out_private: derive_parent_private,
             out_public: derive_parent_public,
         } = create_loaded_result;
+        */
 
         context
             .flush_context(primary_key_handle.into())

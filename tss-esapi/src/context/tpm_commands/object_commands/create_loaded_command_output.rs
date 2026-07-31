@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
+    Error, Result,
+    ffi::take_from_esys,
     handles::ObjectHandle,
     structures::{CreateLoadedKeyResult, Private, Public},
     tss2_esys::{ESYS_TR, TPM2B_PRIVATE, TPM2B_PUBLIC},
-    Error, Result,
-    ffi::take_from_esys,
 };
 use std::convert::TryFrom;
 use std::ptr::null_mut;
