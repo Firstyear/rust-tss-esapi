@@ -399,7 +399,7 @@ mod test_create_loaded {
         structures::{
             CreateLoadedKeyResult, Digest, KeyedHashScheme, PublicBuilder,
             PublicKeyedHashParameters, SymmetricCipherParameters, SymmetricDefinition,
-            SymmetricDefinitionObject,
+            SymmetricDefinitionObject, CreateKeyResult
         },
     };
 
