@@ -412,7 +412,7 @@ mod test_create_loaded {
         let object_attributes = ObjectAttributesBuilder::new()
             .with_fixed_tpm(true)
             .with_fixed_parent(true)
-            .with_st_clear(false)
+            .with_st_clear(true)
             .with_sensitive_data_origin(true)
             .with_user_with_auth(true)
             .with_sign_encrypt(false)
@@ -445,7 +445,7 @@ mod test_create_loaded {
         let derive_parent_object_attributes = ObjectAttributesBuilder::new()
             .with_fixed_tpm(true)
             .with_fixed_parent(true)
-            .with_st_clear(false)
+            .with_st_clear(true)
             .with_sensitive_data_origin(true)
             .with_user_with_auth(true)
             // Architecture 25.1.5 table 24.
