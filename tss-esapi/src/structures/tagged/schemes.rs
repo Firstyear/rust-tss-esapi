@@ -32,10 +32,10 @@ impl KeyedHashScheme {
     };
 
     pub const KDF1_SP800_108_SHA_256: KeyedHashScheme = KeyedHashScheme::Xor {
-        xor_scheme: XorScheme {
-            hashing_algorithm: HashingAlgorithm::Sha256,
-            key_derivation_function: KeyDerivationFunction::Kdf1Sp800_108,
-        }
+        xor_scheme: XorScheme::new(
+            HashingAlgorithm::Sha256,
+            KeyDerivationFunction::Kdf1Sp800_108,
+        )
     };
 }
 
