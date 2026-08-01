@@ -524,7 +524,10 @@ mod test_create_loaded {
             mode: SymmetricMode::Cbc,
         });
 
-        let derivation_params = Derive::default();
+        let derivation_params = Derive::new(
+            b"label",
+            b"context",
+        ).unwrap();
 
         let derived_public = PublicBuilder::new()
             .with_public_algorithm(PublicAlgorithm::SymCipher)
