@@ -525,21 +525,22 @@ mod test_create_loaded {
         });
 
         // let derivation_params = Digest::try_from(b"testinputs".to_vec()).unwrap();
+        let derivation_params = Digest::default();
 
         let derived_public = PublicBuilder::new()
             .with_public_algorithm(PublicAlgorithm::SymCipher)
             .with_name_hashing_algorithm(HashingAlgorithm::Sha256)
             .with_object_attributes(derived_object_attributes)
             .with_symmetric_cipher_parameters(aes_params)
-            // .with_symmetric_cipher_unique_identifier(derivation_params)
+            .with_symmetric_cipher_unique_identifier(derivation_params)
             .build()
-            .expect("Failed to build derive parent public");
+            .expect("Failed to build derived object public");
 
         // We should be able to create and load this now. And look, like magic,
         // it's created and loaded in one operation!
         let create_loaded_result = context
             .create_loaded(derive_parent_handle.into(), derived_public, None, None)
-            .expect("Failed to create derivation parent.");
+            .expect("Failed to create derived object.");
 
         let CreateLoadedKeyResult {
             object_handle: derived_handle,

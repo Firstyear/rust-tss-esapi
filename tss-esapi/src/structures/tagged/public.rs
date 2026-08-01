@@ -8,7 +8,7 @@ use crate::{
     Error, Result, ReturnCode, WrapperErrorKind,
     attributes::ObjectAttributes,
     interface_types::algorithm::{HashingAlgorithm, PublicAlgorithm},
-    structures::{Digest, EccPoint, PublicKeyRsa, SymmetricCipherParameters},
+    structures::{Derive, Digest, EccPoint, PublicKeyRsa, SymmetricCipherParameters},
     traits::{Marshall, impl_mu_standard},
     tss2_esys::{TPM2B_PUBLIC, TPM2B_TEMPLATE, TPMT_PUBLIC},
 };
@@ -333,6 +333,13 @@ pub enum Public {
         parameters: SymmetricCipherParameters,
         unique: Digest,
     },
+    DerivedSymCipher {
+        object_attributes: ObjectAttributes,
+        name_hashing_algorithm: HashingAlgorithm,
+        auth_policy: Digest,
+        parameters: SymmetricCipherParameters,
+        unique: Derive,
+    }
 }
 
 impl Public {
@@ -349,6 +356,9 @@ impl Public {
                 object_attributes, ..
             }
             | Public::SymCipher {
+                object_attributes, ..
+            }
+            | Public::DerivedSymCipher {
                 object_attributes, ..
             } => *object_attributes,
         }
@@ -372,6 +382,10 @@ impl Public {
             | Public::SymCipher {
                 name_hashing_algorithm,
                 ..
+            }
+            | Public::DerivedSymCipher {
+                name_hashing_algorithm,
+                ..
             } => *name_hashing_algorithm,
         }
     }
@@ -382,7 +396,8 @@ impl Public {
             Public::Rsa { parameters, .. } => Ok(parameters.symmetric_definition_object()),
             Public::KeyedHash { .. } => Err(Error::local_error(WrapperErrorKind::InvalidParam)),
             Public::Ecc { parameters, .. } => Ok(parameters.symmetric_definition_object()),
-            Public::SymCipher { parameters, .. } => Ok(parameters.symmetric_definition_object()),
+            Public::SymCipher { parameters, .. } |
+            Public::DerivedSymCipher { parameters, .. } => Ok(parameters.symmetric_definition_object()),
         }
     }
 
@@ -392,7 +407,8 @@ impl Public {
             Public::Rsa { auth_policy, .. }
             | Public::KeyedHash { auth_policy, .. }
             | Public::Ecc { auth_policy, .. }
-            | Public::SymCipher { auth_policy, .. } => auth_policy,
+            | Public::SymCipher { auth_policy, .. } 
+            | Public::DerivedSymCipher { auth_policy, .. } => auth_policy,
         }
     }
 
@@ -471,6 +487,23 @@ impl From<Public> for TPMT_PUBLIC {
                 },
                 unique: TPMU_PUBLIC_ID { sym: unique.into() },
             },
+            Public::DerivedSymCipher {
+                object_attributes,
+                name_hashing_algorithm,
+                auth_policy,
+                parameters,
+                unique,
+            } => TPMT_PUBLIC {
+                type_: PublicAlgorithm::SymCipher.into(),
+                nameAlg: name_hashing_algorithm.into(),
+                objectAttributes: object_attributes.into(),
+                authPolicy: auth_policy.into(),
+                parameters: TPMU_PUBLIC_PARMS {
+                    symDetail: parameters.into(),
+                },
+                unique: TPMU_PUBLIC_ID { derive: unique.into() },
+            },
+
         }
     }
 }
