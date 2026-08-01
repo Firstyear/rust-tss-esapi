@@ -508,14 +508,19 @@ mod test_create_loaded {
             .with_name_hashing_algorithm(HashingAlgorithm::Sha256)
             .with_object_attributes(derived_object_attributes)
             .with_symmetric_cipher_parameters(aes_params)
-            .with_derivation_parameters(derivation_params)
+            .with_symmetric_cipher_unique_identifier(Digest::default())
             .build()
             .expect("Failed to build derived object public");
 
         // We should be able to create and load this now. And look, like magic,
         // it's created and loaded in one operation!
         let create_loaded_result = context
-            .create_loaded(derive_parent_handle.into(), derived_public, None, None)
+            .create_loaded(
+                derive_parent_handle.into(),
+                derived_public,
+                None,
+                Some(derivation_params),
+            )
             .expect("Failed to create derived object.");
 
         let CreateLoadedKeyResult {

@@ -451,12 +451,14 @@ impl Context {
         public: Public,
         auth_value: Option<Auth>,
         sensitive_data: Option<SensitiveData>,
+        derive: Option<Derive>,
     ) -> Result<CreateLoadedKeyResult> {
         let input_parameters = CreateLoadedCommandInputHandler::create(
             parent_handle,
             public,
             auth_value,
             sensitive_data,
+            derive,
         )?;
 
         let mut output_parameters = CreateLoadedCommandOutputHandler::new();
