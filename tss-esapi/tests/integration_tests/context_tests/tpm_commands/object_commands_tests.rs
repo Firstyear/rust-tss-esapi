@@ -397,9 +397,9 @@ mod test_create_loaded {
             reserved_handles::Hierarchy,
         },
         structures::{
-            CreateLoadedKeyResult, Digest, KeyedHashScheme, PublicBuilder,
+            CreateKeyResult, CreateLoadedKeyResult, Digest, KeyedHashScheme, PublicBuilder,
             PublicKeyedHashParameters, SymmetricCipherParameters, SymmetricDefinition,
-            SymmetricDefinitionObject, CreateKeyResult
+            SymmetricDefinitionObject,
         },
     };
 
@@ -556,4 +556,3 @@ mod test_create_loaded {
         //  TPM_ALG_KDF1_SP800_108 == CMAC/HMAC/KMAC derivation
     }
 }
-

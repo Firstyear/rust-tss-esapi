@@ -35,7 +35,7 @@ impl KeyedHashScheme {
         xor_scheme: XorScheme::new(
             HashingAlgorithm::Sha256,
             KeyDerivationFunction::Kdf1Sp800_108,
-        )
+        ),
     };
 }
 

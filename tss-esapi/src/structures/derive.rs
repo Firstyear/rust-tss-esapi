@@ -1,10 +1,5 @@
-
-use crate::{
-    Result,
-    structures::buffers::label::Label
-};
 use crate::tss2_esys::TPMS_DERIVE;
-
+use crate::{Result, structures::buffers::label::Label};
 
 /// Structure holding key derivation parameters
 ///
@@ -21,9 +16,7 @@ impl Derive {
         let label = Label::from_bytes(label)?;
         let context = Label::from_bytes(context)?;
 
-        Ok(Self {
-            label, context
-        })
+        Ok(Self { label, context })
     }
 }
 

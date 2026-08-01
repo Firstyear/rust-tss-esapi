@@ -339,7 +339,7 @@ pub enum Public {
         auth_policy: Digest,
         parameters: SymmetricCipherParameters,
         unique: Derive,
-    }
+    },
 }
 
 impl Public {
@@ -396,8 +396,9 @@ impl Public {
             Public::Rsa { parameters, .. } => Ok(parameters.symmetric_definition_object()),
             Public::KeyedHash { .. } => Err(Error::local_error(WrapperErrorKind::InvalidParam)),
             Public::Ecc { parameters, .. } => Ok(parameters.symmetric_definition_object()),
-            Public::SymCipher { parameters, .. } |
-            Public::DerivedSymCipher { parameters, .. } => Ok(parameters.symmetric_definition_object()),
+            Public::SymCipher { parameters, .. } | Public::DerivedSymCipher { parameters, .. } => {
+                Ok(parameters.symmetric_definition_object())
+            }
         }
     }
 
@@ -407,7 +408,7 @@ impl Public {
             Public::Rsa { auth_policy, .. }
             | Public::KeyedHash { auth_policy, .. }
             | Public::Ecc { auth_policy, .. }
-            | Public::SymCipher { auth_policy, .. } 
+            | Public::SymCipher { auth_policy, .. }
             | Public::DerivedSymCipher { auth_policy, .. } => auth_policy,
         }
     }
@@ -501,9 +502,10 @@ impl From<Public> for TPMT_PUBLIC {
                 parameters: TPMU_PUBLIC_PARMS {
                     symDetail: parameters.into(),
                 },
-                unique: TPMU_PUBLIC_ID { derive: unique.into() },
+                unique: TPMU_PUBLIC_ID {
+                    derive: unique.into(),
+                },
             },
-
         }
     }
 }

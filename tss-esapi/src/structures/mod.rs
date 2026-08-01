@@ -38,13 +38,12 @@ mod buffers;
 pub use self::buffers::{
     attest::AttestBuffer, auth::Auth, data::Data, digest::Digest, ecc_parameter::EccParameter,
     encrypted_secret::EncryptedSecret, event::Event, id_object::IdObject,
-    initial_value::InitialValue, max_buffer::MaxBuffer, max_nv_buffer::MaxNvBuffer, nonce::Nonce,
-    private::Private, private_key_rsa::PrivateKeyRsa,
+    initial_value::InitialValue, label::Label, max_buffer::MaxBuffer, max_nv_buffer::MaxNvBuffer,
+    nonce::Nonce, private::Private, private_key_rsa::PrivateKeyRsa,
     private_vendor_specific::PrivateVendorSpecific, public::PublicBuffer,
     public_key_rsa::PublicKeyRsa, sensitive::SensitiveBuffer,
     sensitive_create::SensitiveCreateBuffer, sensitive_data::SensitiveData,
     symmetric_key::SymmetricKey, timeout::Timeout, tpm_context_data::TpmContextData,
-    label::Label,
 };
 // //////////////////////////////////////////////////////
 // The creation section
