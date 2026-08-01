@@ -455,14 +455,12 @@ mod test_create_loaded {
             .build()
             .expect("Failed to build object attributes");
 
-        // How can I set this to KeyDerivationFunctionScheme::Kdf1Sp800_108(HashScheme::Sha256)
-
         let derive_parent_public = PublicBuilder::new()
             .with_public_algorithm(PublicAlgorithm::KeyedHash)
             .with_name_hashing_algorithm(HashingAlgorithm::Sha256)
             .with_object_attributes(derive_parent_object_attributes)
             .with_keyed_hash_parameters(PublicKeyedHashParameters::new(
-                KeyedHashScheme::HMAC_SHA_256,
+                KeyedHashScheme::KDF1_SP800_108_SHA_256,
             ))
             .with_keyed_hash_unique_identifier(Digest::default())
             .build()
