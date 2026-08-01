@@ -449,15 +449,15 @@ impl Context {
     pub fn create_loaded(
         &mut self,
         parent_handle: KeyHandle,
+        public: Public,
         auth_value: Option<Auth>,
         sensitive_data: Option<SensitiveData>,
-        public: Public,
     ) -> Result<CreateLoadedKeyResult> {
         let input_parameters = CreateLoadedCommandInputHandler::create(
             parent_handle,
+            public,
             auth_value,
             sensitive_data,
-            public,
         )?;
 
         let mut output_parameters = CreateLoadedCommandOutputHandler::new();

@@ -46,9 +46,9 @@ impl CreateLoadedCommandInputHandler {
     /// WrapperErrors if the conversions to the TSS types fails.
     pub(crate) fn create(
         parent_handle: KeyHandle,
+        public: Public,
         auth_value: Option<Auth>,
         sensitive_data: Option<SensitiveData>,
-        public: Public,
     ) -> Result<Self> {
         Ok(Self {
             ffi_in_parent_handle: parent_handle.into(),

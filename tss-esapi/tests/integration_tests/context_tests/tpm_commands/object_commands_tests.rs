@@ -509,11 +509,10 @@ mod test_create_loaded {
         let derived_object_attributes = ObjectAttributesBuilder::new()
             .with_fixed_tpm(true)
             .with_fixed_parent(true)
-            .with_st_clear(false)
+            .with_st_clear(true)
             // Must be false on a derived key.
             .with_sensitive_data_origin(false)
             .with_user_with_auth(true)
-            // The key is used only for signing.
             .with_sign_encrypt(true)
             .with_decrypt(true)
             .with_restricted(false)
@@ -525,21 +524,21 @@ mod test_create_loaded {
             mode: SymmetricMode::Cbc,
         });
 
-        let derivation_params = Digest::try_from(b"testinputs".to_vec()).unwrap();
+        // let derivation_params = Digest::try_from(b"testinputs".to_vec()).unwrap();
 
         let derived_public = PublicBuilder::new()
             .with_public_algorithm(PublicAlgorithm::SymCipher)
             .with_name_hashing_algorithm(HashingAlgorithm::Sha256)
             .with_object_attributes(derived_object_attributes)
             .with_symmetric_cipher_parameters(aes_params)
-            .with_symmetric_cipher_unique_identifier(derivation_params)
+            // .with_symmetric_cipher_unique_identifier(derivation_params)
             .build()
             .expect("Failed to build derive parent public");
 
         // We should be able to create and load this now. And look, like magic,
         // it's created and loaded in one operation!
         let create_loaded_result = context
-            .create_loaded(derive_parent_handle.into(), None, None, derived_public)
+            .create_loaded(derive_parent_handle.into(), derived_public, None, None)
             .expect("Failed to create derivation parent.");
 
         let CreateLoadedKeyResult {
@@ -556,3 +555,4 @@ mod test_create_loaded {
         //  TPM_ALG_KDF1_SP800_108 == CMAC/HMAC/KMAC derivation
     }
 }
+
