@@ -397,7 +397,7 @@ mod test_create_loaded {
             reserved_handles::Hierarchy,
         },
         structures::{
-            CreateKeyResult, CreateLoadedKeyResult, Digest, KeyedHashScheme, PublicBuilder,
+            CreateKeyResult, CreateLoadedKeyResult, Derive, Digest, KeyedHashScheme, PublicBuilder,
             PublicKeyedHashParameters, SymmetricCipherParameters, SymmetricDefinition,
             SymmetricDefinitionObject,
         },
@@ -524,10 +524,7 @@ mod test_create_loaded {
             mode: SymmetricMode::Cbc,
         });
 
-        let derivation_params = Derive::new(
-            b"label",
-            b"context",
-        ).unwrap();
+        let derivation_params = Derive::from_bytes(b"label", b"context").unwrap();
 
         let derived_public = PublicBuilder::new()
             .with_public_algorithm(PublicAlgorithm::SymCipher)
