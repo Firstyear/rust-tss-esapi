@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    Result,
+    Result, Error, WrapperErrorKind
     ffi::data_zeroize::FfiDataZeroize,
     handles::KeyHandle,
-    structures::{Auth, Public, SensitiveCreate, SensitiveData},
+    structures::{Auth, Derive, Public, SensitiveCreate, SensitiveData},
     tss2_esys::{ESYS_TR, TPM2B_SENSITIVE_CREATE, TPM2B_TEMPLATE},
 };
+use log::error;
 use std::convert::TryInto;
 use zeroize::Zeroize;
 

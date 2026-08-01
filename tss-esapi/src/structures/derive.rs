@@ -1,4 +1,4 @@
-use crate::tss2_esys::TPMS_DERIVE;
+use crate::tss2_esys::{TPMS_DERIVE, TPMU_SENSITIVE_CREATE};
 use crate::{Result, structures::buffers::label::Label};
 
 /// Structure holding key derivation parameters
