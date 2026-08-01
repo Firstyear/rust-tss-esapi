@@ -12,7 +12,7 @@ use crate::{
     handles::{KeyHandle, ObjectHandle, TpmHandle},
     interface_types::reserved_handles::Hierarchy,
     structures::{
-        Auth, CreateKeyResult, CreateLoadedKeyResult, Data, Digest, EncryptedSecret, IdObject,
+        Auth, CreateKeyResult, CreateLoadedKeyResult, Data, Derive, Digest, EncryptedSecret, IdObject,
         Name, PcrSelectionList, Private, Public, Sensitive, SensitiveData,
     },
     tss2_esys::{
