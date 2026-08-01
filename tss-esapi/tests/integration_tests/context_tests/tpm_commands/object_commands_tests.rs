@@ -524,15 +524,14 @@ mod test_create_loaded {
             mode: SymmetricMode::Cbc,
         });
 
-        // let derivation_params = Digest::try_from(b"testinputs".to_vec()).unwrap();
-        let derivation_params = Digest::default();
+        let derivation_params = Derive::default();
 
         let derived_public = PublicBuilder::new()
             .with_public_algorithm(PublicAlgorithm::SymCipher)
             .with_name_hashing_algorithm(HashingAlgorithm::Sha256)
             .with_object_attributes(derived_object_attributes)
             .with_symmetric_cipher_parameters(aes_params)
-            .with_symmetric_cipher_unique_identifier(derivation_params)
+            .with_derivation_parameters(derivation_params)
             .build()
             .expect("Failed to build derived object public");
 

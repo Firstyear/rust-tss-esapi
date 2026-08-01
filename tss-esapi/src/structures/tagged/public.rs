@@ -4,6 +4,8 @@ pub mod ecc;
 pub mod keyed_hash;
 pub mod rsa;
 
+use self::rsa::PublicRsaParameters;
+use super::symmetric::SymmetricDefinitionObject;
 use crate::{
     Error, Result, ReturnCode, WrapperErrorKind,
     attributes::ObjectAttributes,
@@ -12,16 +14,11 @@ use crate::{
     traits::{Marshall, impl_mu_standard},
     tss2_esys::{TPM2B_PUBLIC, TPM2B_TEMPLATE, TPMT_PUBLIC},
 };
-
-use self::rsa::PublicRsaParameters;
 use ecc::PublicEccParameters;
 use keyed_hash::PublicKeyedHashParameters;
-
 use log::error;
 use std::convert::{TryFrom, TryInto};
 use tss_esapi_sys::{TPMU_PUBLIC_ID, TPMU_PUBLIC_PARMS};
-
-use super::symmetric::SymmetricDefinitionObject;
 
 /// A builder for the [Public] type.
 #[derive(Debug, Clone)]
@@ -38,6 +35,7 @@ pub struct PublicBuilder {
     ecc_unique_identifier: Option<EccPoint>,
     symmetric_cipher_parameters: Option<SymmetricCipherParameters>,
     symmetric_cipher_unique_identifier: Option<Digest>,
+    derivation_parameters: Option<Derive>,
 }
 
 impl PublicBuilder {
@@ -61,6 +59,7 @@ impl PublicBuilder {
             ecc_unique_identifier: None,
             symmetric_cipher_parameters: None,
             symmetric_cipher_unique_identifier: None,
+            derivation_parameters: None,
         }
     }
 
@@ -199,6 +198,11 @@ impl PublicBuilder {
         self
     }
 
+    pub fn with_derivation_parameters(mut self, derivation_parameters: Derive) -> Self {
+        self.derivation_parameters = Some(derivation_parameters);
+        self
+    }
+
     /// Builds the [Public] structure.
     ///
     /// # Errors
@@ -225,8 +229,8 @@ impl PublicBuilder {
 
         let auth_policy = self.auth_policy.unwrap_or_default();
 
-        match algorithm {
-            PublicAlgorithm::Rsa => {
+        match (algorithm, self.derivation_parameters) {
+            (PublicAlgorithm::Rsa, None) => {
                 Ok(Public::Rsa {
                     object_attributes,
                     name_hashing_algorithm,
@@ -241,7 +245,7 @@ impl PublicBuilder {
                     })?,
                 })
             },
-            PublicAlgorithm::KeyedHash => {
+            (PublicAlgorithm::KeyedHash, None) => {
                 Ok(Public::KeyedHash {
                     object_attributes,
                     name_hashing_algorithm,
@@ -256,7 +260,7 @@ impl PublicBuilder {
                     })?,
                 })
             },
-            PublicAlgorithm::Ecc => {
+            (PublicAlgorithm::Ecc, None) => {
                 Ok(Public::Ecc {
                     object_attributes,
                     name_hashing_algorithm,
@@ -271,7 +275,7 @@ impl PublicBuilder {
                     })?,
                 })
             }
-            PublicAlgorithm::SymCipher => {
+            (PublicAlgorithm::SymCipher, None) => {
                 Ok(Public::SymCipher {
                     object_attributes,
                     name_hashing_algorithm,
@@ -285,6 +289,24 @@ impl PublicBuilder {
                         Error::local_error(WrapperErrorKind::ParamsMissing)
                     })?,
                 })
+            }
+            (PublicAlgorithm::SymCipher, Some(derive)) => {
+                Ok(Public::DerivedSymCipher {
+                    object_attributes,
+                    name_hashing_algorithm,
+                    auth_policy,
+                    parameters: self.symmetric_cipher_parameters.ok_or_else(|| {
+                        error!("Symmetric cipher parameters have not been set in the Public Builder even though the symmetric cipher algorithm have been selected");
+                        Error::local_error(WrapperErrorKind::ParamsMissing)
+                    })?,
+                    unique: derive,
+                })
+            }
+            (_public_algorithm, Some(_)) => {
+                error!(
+                    "The requested public algorithm can not be used with object derivation."
+                );
+                Err(Error::local_error(WrapperErrorKind::InvalidParam))
             }
         }
     }
