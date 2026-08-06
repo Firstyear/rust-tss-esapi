@@ -469,7 +469,7 @@ mod test_create_loaded {
         // We should be able to create and load this now. And look, like magic,
         // it's created and loaded in one operation!
         let create_loaded_result = context
-            .create_loaded(primary_key_handle, derive_parent_public, None, None)
+            .create_loaded(primary_key_handle, derive_parent_public, None, None, None)
             .expect("Failed to create derivation parent.");
 
         let CreateLoadedKeyResult {
@@ -518,6 +518,7 @@ mod test_create_loaded {
             .create_loaded(
                 derive_parent_handle.into(),
                 derived_public,
+                None,
                 None,
                 Some(derivation_params),
             )

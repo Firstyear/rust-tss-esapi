@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    Result, Error, WrapperErrorKind,
+    Error, Result, WrapperErrorKind,
     ffi::data_zeroize::FfiDataZeroize,
     handles::KeyHandle,
     structures::{Auth, Derive, Public, SensitiveCreate, SensitiveData},
-    tss2_esys::{ESYS_TR, TPM2B_SENSITIVE_CREATE, TPM2B_TEMPLATE, TPMU_SENSITIVE_CREATE},
+    tss2_esys::{ESYS_TR, TPM2B_SENSITIVE_CREATE, TPM2B_TEMPLATE},
 };
 use log::error;
 use std::convert::TryInto;
@@ -61,12 +61,13 @@ impl CreateLoadedCommandInputHandler {
                     .try_into()?
             }
             (None, Some(derive)) => {
-                let data = TPM2B_SENSITIVE_CREATE::try_from(derive)?,
+                let sensitive_data = SensitiveData::try_from(derive)?;
 
-                TPMS_SENSITIVE_CREATE {
-                    user_auth.into(),
-                    data,
-                }
+                SensitiveCreate::new(
+                    auth_value.unwrap_or_default(),
+                    sensitive_data, // SensitiveData
+                )
+                .try_into()?
             }
             (Some(_), Some(_)) => {
                 error!("Only one of sensitive_data or derive can be provided - not both!");

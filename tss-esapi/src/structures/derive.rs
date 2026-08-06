@@ -1,5 +1,8 @@
-use crate::tss2_esys::{TPMS_DERIVE, TPMU_SENSITIVE_CREATE};
-use crate::{Result, structures::buffers::label::Label};
+use crate::tss2_esys::{TPM2B_SENSITIVE_DATA, TPMS_DERIVE};
+use crate::{
+    Error, Result,
+    structures::{SensitiveData, buffers::label::Label},
+};
 
 /// Structure holding key derivation parameters
 ///
@@ -29,12 +32,38 @@ impl From<Derive> for TPMS_DERIVE {
     }
 }
 
-impl TPM2B_SENSITIVE_DATA
+impl TryFrom<Derive> for SensitiveData {
+    type Error = Error;
 
-impl From<Derive> for TPMU_SENSITIVE_CREATE {
-    fn from(derive: Derive) -> Self {
-        TPMU_SENSITIVE_CREATE {
-            derive: TPMS_DERIVE::from(derive),
-        }
+    fn try_from(derive: Derive) -> Result<Self> {
+        // There are actually no marshalling functions for this, so we have to hand roll it.
+        // Yes, I hate this as much as you do.
+        let Derive { label, context } = derive;
+
+        let label_bytes: &[u8] = label.as_ref();
+        let label_len = label_bytes.len().to_be_bytes();
+        let context_bytes: &[u8] = context.as_ref();
+        let context_len = context_bytes.len().to_be_bytes();
+
+        let size = label_len.len() + label_bytes.len() + context_len.len() + context_bytes.len();
+        let mut stage_buffer = Vec::with_capacity(256);
+
+        stage_buffer.extend(label_len);
+        stage_buffer.extend(label_bytes);
+        stage_buffer.extend(context_len);
+        stage_buffer.extend(context_bytes);
+
+        let mut buffer: [u8; 256] = [0; 256];
+
+        let buffer_view = &mut buffer[..size];
+
+        buffer_view.copy_from_slice(&stage_buffer);
+
+        let tpm2b_sensitive_data = TPM2B_SENSITIVE_DATA {
+            size: size as u16,
+            buffer,
+        };
+
+        SensitiveData::try_from(tpm2b_sensitive_data)
     }
 }

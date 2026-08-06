@@ -12,8 +12,8 @@ use crate::{
     handles::{KeyHandle, ObjectHandle, TpmHandle},
     interface_types::reserved_handles::Hierarchy,
     structures::{
-        Auth, CreateKeyResult, CreateLoadedKeyResult, Data, Derive, Digest, EncryptedSecret, IdObject,
-        Name, PcrSelectionList, Private, Public, Sensitive, SensitiveData,
+        Auth, CreateKeyResult, CreateLoadedKeyResult, Data, Derive, Digest, EncryptedSecret,
+        IdObject, Name, PcrSelectionList, Private, Public, Sensitive, SensitiveData,
     },
     tss2_esys::{
         Esys_ActivateCredential, Esys_Create, Esys_CreateLoaded, Esys_Load, Esys_LoadExternal,
@@ -474,7 +474,7 @@ impl Context {
                     self.optional_session_1(),
                     self.optional_session_2(),
                     self.optional_session_3(),
-                    // inSensitive
+                    // inSensitive / inPrivate
                     input_parameters.ffi_in_sensitive(),
                     // inPublic
                     input_parameters.ffi_in_public(),
