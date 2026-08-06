@@ -29,6 +29,8 @@ impl From<Derive> for TPMS_DERIVE {
     }
 }
 
+impl TPM2B_SENSITIVE_DATA
+
 impl From<Derive> for TPMU_SENSITIVE_CREATE {
     fn from(derive: Derive) -> Self {
         TPMU_SENSITIVE_CREATE {

@@ -52,21 +52,25 @@ impl CreateLoadedCommandInputHandler {
         sensitive_data: Option<SensitiveData>,
         derive: Option<Derive>,
     ) -> Result<Self> {
-        let ffi_in_sensitive = match (sensitive_data, derive) {
+        let ffi_in_sensitive: TPM2B_SENSITIVE_CREATE = match (sensitive_data, derive) {
             (Some(sensitive_data), None) => {
                 SensitiveCreate::new(auth_value.unwrap_or_default(), sensitive_data).try_into()?
             }
-
-            (None, Some(derive)) => TPMU_SENSITIVE_CREATE::from(derive),
-
             (None, None) => {
                 SensitiveCreate::new(auth_value.unwrap_or_default(), Default::default())
                     .try_into()?
             }
+            (None, Some(derive)) => {
+                let data = TPM2B_SENSITIVE_CREATE::try_from(derive)?,
 
+                TPMS_SENSITIVE_CREATE {
+                    user_auth.into(),
+                    data,
+                }
+            }
             (Some(_), Some(_)) => {
                 error!("Only one of sensitive_data or derive can be provided - not both!");
-                Error::local_error(WrapperErrorKind::InvalidParam)
+                return Err(Error::local_error(WrapperErrorKind::InvalidParam));
             }
         };
 
